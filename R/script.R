@@ -10,7 +10,6 @@
 #' @import ftExtra, officer, flextable
 #' @return
 #' @export
-#'
 #' @examples
 create_table <- function(data){
   comb <- as_grouped_data(x = data, groups = c("Category"))
