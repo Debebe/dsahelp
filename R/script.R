@@ -1,11 +1,3 @@
-# Hello, world!
-#
-# This is an example function named 'hello'
-# which prints 'Hello, world!'.
-#
-# You can learn more about package authoring with RStudio at:
-#
-#   http://r-pkgs.had.co.nz/
 #
 # Some useful keyboard shortcuts for package authoring:
 #
@@ -13,20 +5,14 @@
 #   Check Package:             'Cmd + Shift + E'
 #   Test Package:              'Cmd + Shift + T'
 
-hello <- function() {
-  print("Hello, world!")
-}
-
-
-#' Title
-#'
+#' Title Create publication quality table
 #' @param data data.frame for tabble creation
 #' @import ftExtra, officer, flextable
 #' @return
 #' @export
 #'
 #' @examples
-tabling <- function(data){
+create_table <- function(data){
   comb <- as_grouped_data(x = data, groups = c("Category"))
   ft <- comb%>%
     as_flextable(hide_grouplabel = TRUE)%>%
