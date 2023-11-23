@@ -113,6 +113,8 @@ calculate_crude_OR <- function(data, response_var, predictor_vars) {
     tab <- exp(cbind(coef(out), confint.default(out)))
     tab <- as.data.frame(tab)
     setDT(tab, keep.rownames = TRUE)
+
+    xlevels=out$xlevels
   })
 
   crude_OR <- do.call("rbind", output)
@@ -127,7 +129,7 @@ calculate_crude_OR <- function(data, response_var, predictor_vars) {
 #' @export
 #'
 #' @examples
-prepare_regression_output <-function(glm_object){
+prepare_adjusted_regression <-function(glm_object){
 
   out<- exp(cbind(coef(glm_object), confint.default(glm_object)))
   out <-out%>%
@@ -164,3 +166,58 @@ prepare_regression_output <-function(glm_object){
 return(reg_out)
 
 }
+
+
+#' Title This fits glm and outputs Crude OR for for each variable
+#'
+#' @param data Data.frame containing response variable and predictors
+#' @param response_var
+#' @param predictor_vars
+#'
+#' @return Data.frame containing processed coeffcients and variables
+#' @export
+#'
+#' @examples
+prepare_crude_regression <- function(data, response_var, predictor_vars) {
+  output <- lapply(predictor_vars, function(var) {
+    formula_text <- ifelse(grepl("\\s", var), paste(response_var, "~", "`", var, "`", sep = ""),
+                           paste(response_var, "~", var))
+    formula <- as.formula(formula_text)
+    out <- glm(formula, family = binomial(link = logit), data = data)
+    tab <- exp(cbind(coef(out), confint.default(out)))
+    tab <- as.data.frame(tab)
+    setDT(tab, keep.rownames = TRUE)
+
+    glm_vars <-out$xlevels
+    # capture in a data frame
+    df <- data.frame(
+      Category = rep(names(glm_vars), lengths(glm_vars)),
+      Variable = unlist(glm_vars))
+    # clean variable names in the summary table using xlevels variables
+    tab <- tab%>%
+      mutate(Category= str_extract(rn, paste(df$Category, collapse = "|")),
+             Variable= str_extract(rn, paste(df$Variable, collapse = "|")),
+             Category= ifelse(grepl("Intercept", rn), "Intercept", Category),
+             Variable= ifelse(grepl("Intercept", rn), "Intercept", Variable))%>%
+      select(-rn)%>%
+      full_join(df)
+    return(tab)
+  })
+
+  crude_OR <- do.call("rbind", output)%>%
+    distinct(Variable, .keep_all = TRUE)%>%
+    mutate_if(is.numeric, round, 2)%>%
+    mutate(Estimate = paste(V1, "(", `2.5 %`, " , ", `97.5 %`, ")", sep = ""))%>%
+    mutate(Estimate=ifelse(grepl("NA", Estimate), "1.00", Estimate))%>%
+    dplyr::select(Category, Variable, Estimate)%>%
+    # if the following are in the output, order as follows
+    mutate(id=case_when(Category=="Intercept" ~1,
+                        Category=="Sex" ~2,
+                        Category=="Age" ~ 3,
+                        Category=="Race"~4,
+                        Category=="Wealth"~5,
+                        Category=="Residence"~6))%>%
+    arrange(id, Category)%>% dplyr::select(-id)
+  return(crude_OR)
+}
+
