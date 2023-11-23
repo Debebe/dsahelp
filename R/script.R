@@ -35,3 +35,87 @@ create_table <- function(data){
   ft <-fontsize(ft, i = NULL, j = NULL, size = 7, part = "footer")
   set_table_properties(ft,layout = "autofit")
 }
+
+
+#' Title Cleans variable names from regression outputs
+#'
+#' @param tab  data.frame with messy variable names and regression coefficients
+#'
+#' @return data.frame with clean variable names and coefficients
+#' @export
+#'
+#' @examples
+clean_regression_variables <- function(tab) {
+  tab <- tab %>%
+    # separate variables separated by "`"
+    tidyr::separate(rn, into=c('old_category', 'Category',"Variable"), sep='`')%>%
+    #create white space between lowercase followed by Uppercase,by number
+    mutate(old_category_spaced = gsub("(?<=[a-z])(?=[A-Z0-9])", " ", old_category, perl = TRUE)) %>%
+    # separate at white space
+    tidyr::extract(old_category_spaced, into = c("Category", "Variable"), regex = "^(\\w+)\\s?(.*)$")%>%
+    mutate(Category=ifelse(grepl("Intercept", old_category), "Intercept", Category),
+           Variable=ifelse(grepl("Intercept", old_category), "Intercept", Variable))%>%
+    dplyr::select(-c("old_category"))
+
+  return(tab)
+}
+
+#' Title
+#'
+#' @param glm_object glm object as outputed from glm call
+#'
+#' @return Data frame with clean variable names and coefficients
+#' @export
+#'
+#' @examples
+clean_glm_outputs <- function(glm_object){
+
+  # Odds ratios of regression coefficients
+  out<- exp(cbind(coef(glm_object), confint.default(glm_object)))
+  out <-out%>%
+    as.data.frame()
+  out <-setDT(out, keep.rownames = TRUE)[]
+  out <- out%>%
+    clean_regression_variables()
+}
+
+
+#' Title Binds mean and 95% CI
+#'
+#' @param V1 Mean regression coefficient
+#' @param ci_lower Lower CI bound
+#' @param ci_upper upper confidence interval bound
+#'
+#' @return Data frame with pasted coefficients
+#' @export
+#'
+#' @examples
+bind_conf_interval <- function(V1, ci_lower, ci_upper) {
+  return(paste(round(V1, 2), "(", round(ci_lower, 2), ",", round(ci_upper, 2), ")", sep = ""))
+}
+
+#' Title Runs crude odds ratios for each predictor variable in one execution
+#'
+#' @param data  Data.frame containing response variable and all predictor variables
+#' @param response_var Response variable for glm regression
+#' @param predictor_vars Predictor variables for glm variables
+#'
+#' @return  data.frame with cude regression coefficients for all predictor variables involved
+#' @export
+#'
+#' @examples
+calculate_crude_OR <- function(data, response_var, predictor_vars) {
+  output <- lapply(predictor_vars, function(var) {
+    formula_text <- ifelse(grepl("\\s", var), paste(response_var, "~", "`", var, "`", sep = ""),
+                           paste(response_var, "~", var))
+    formula <- as.formula(formula_text)
+    out <- glm(formula, family = binomial(link = logit), data = data)
+    tab <- exp(cbind(coef(out), confint.default(out)))
+    tab <- as.data.frame(tab)
+    setDT(tab, keep.rownames = TRUE)
+  })
+
+  crude_OR <- do.call("rbind", output)
+  return(crude_OR)
+}
+
