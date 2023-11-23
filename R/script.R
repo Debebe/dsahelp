@@ -152,7 +152,7 @@ prepare_adjusted_regression <-function(glm_object){
   # merge xlevels variables with summary table
   reg_out <-full_join(df, reg_summary)%>%
     mutate_if(is.numeric, round, 2)%>%
-    mutate(Estimate = paste(V1, "(", `2.5 %`, " , ", `97.5 %`, ")", sep = ""))%>%
+    mutate(Estimate = paste(V1, "(", `2.5 %`, ", ", `97.5 %`, ")", sep = ""))%>%
     mutate(Estimate=ifelse(grepl("NA", Estimate), "1.00", Estimate))%>%
     dplyr::select(Category, Variable, Estimate)%>%
     mutate(id=case_when(Category=="Intercept" ~1,
@@ -207,7 +207,7 @@ prepare_crude_regression <- function(data, response_var, predictor_vars) {
   crude_OR <- do.call("rbind", output)%>%
     distinct(Variable, .keep_all = TRUE)%>%
     mutate_if(is.numeric, round, 2)%>%
-    mutate(Estimate = paste(V1, "(", `2.5 %`, " , ", `97.5 %`, ")", sep = ""))%>%
+    mutate(Estimate = paste(V1, "(", `2.5 %`, ", ", `97.5 %`, ")", sep = ""))%>%
     mutate(Estimate=ifelse(grepl("NA", Estimate), "1.00", Estimate))%>%
     dplyr::select(Category, Variable, Estimate)%>%
     # if the following are in the output, order as follows
