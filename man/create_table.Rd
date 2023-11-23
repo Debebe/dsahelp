@@ -2,13 +2,13 @@
 % Please edit documentation in R/script.R
 \name{create_table}
 \alias{create_table}
-\title{Title Create publication quality table}
+\title{Title Create publication quality tables}
 \usage{
 create_table(data)
 }
 \arguments{
-\item{data}{data.frame for tabble creation}
+\item{data}{Data.frame for table creation}
 }
 \description{
-Title Create publication quality table
+Title Create publication quality tables
 }
