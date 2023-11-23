@@ -119,3 +119,48 @@ calculate_crude_OR <- function(data, response_var, predictor_vars) {
   return(crude_OR)
 }
 
+#' Title This prepares regression outputs
+#'
+#' @param glm_object This is  glm or lm class as outputed by glm
+#'
+#' @return Clean data.frame with for table
+#' @export
+#'
+#' @examples
+prepare_regression_output <-function(glm_object){
+
+  out<- exp(cbind(coef(glm_object), confint.default(glm_object)))
+  out <-out%>%
+    as.data.frame()
+  out <-setDT(out, keep.rownames = TRUE)[]
+
+  # Extracts variable category and levels
+  glm_vars <-glm_object$xlevels
+  # capture in a data frame
+  df <- data.frame(
+    Category = rep(names(glm_vars), lengths(glm_vars)),
+    Variable = unlist(glm_vars))
+  # clean variable names in the summary table using xlevels variables
+  reg_summary <- out%>%
+    mutate(Category= str_extract(rn, paste(df$Category, collapse = "|")),
+           Variable= str_extract(rn, paste(df$Variable, collapse = "|")),
+           Category= ifelse(grepl("Intercept", rn), "Intercept", Category),
+           Variable= ifelse(grepl("Intercept", rn), "Intercept", Variable))%>%
+    select(-rn)
+  # merge xlevels variables with summary table
+  reg_out <-full_join(df, reg_summary)%>%
+    mutate_if(is.numeric, round, 2)%>%
+    mutate(Estimate = paste(V1, "(", `2.5 %`, " , ", `97.5 %`, ")", sep = ""))%>%
+    mutate(Estimate=ifelse(grepl("NA", Estimate), "1.00", Estimate))%>%
+    dplyr::select(Category, Variable, Estimate)%>%
+    mutate(id=case_when(Category=="Intercept" ~1,
+                        Category=="Sex" ~2,
+                        Category=="Age" ~ 3,
+                        Category=="Race"~4,
+                        Category=="Wealth"~5,
+                        Category=="Residence"~6
+    ))%>%
+    arrange(id, Category)%>% dplyr::select(-id)
+return(reg_out)
+
+}
