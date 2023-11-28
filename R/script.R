@@ -221,3 +221,73 @@ prepare_crude_regression <- function(data, response_var, predictor_vars) {
   return(crude_OR)
 }
 
+
+#' Title Calculate weighted and weighted prevalence
+#'
+#' @param survey_data Dataframe containing variables,survey weight etc
+#' @param survey_weight Column in  dataframe for survey weight
+#' @param group Column in the dataframe for grouping variables such as sex
+#' @param response_var Column for a response variable for which prevalence is generated
+#'
+#' @return
+#' @export
+#'
+#' @examples
+create_weighted_prevalence <- function(survey_data, survey_weight, group, response_var) {
+
+  weighted <- svydesign(
+    id = ~cluster_id,
+    strata = ~strata,
+    weights = survey_data[[survey_weight]],
+    data = survey_data,
+    nest = TRUE
+  )
+
+  options(survey.adjust.domain.lonely = TRUE)
+  options(survey.lonely.psu = "adjust")
+
+  #Overall prevalence
+  if (group == "") {
+    mean_prev <- svymean(as.formula(paste0("~", response_var)),
+                         design = weighted)
+
+    ci <- confint(mean_prev)
+
+    prev_overall <- data.frame(
+      Category = "Overall",
+      Variable = "Overall",
+      Prevalence = paste0(
+        round(100 * mean_prev[1], 1),
+        " ",
+        "(", round(100 * ci[1], 1), " - ", round(100 * ci[2], 1), ")"
+      ),
+      Weight = survey_weight
+    )
+
+    return(prev_overall)
+
+    # Stratified prevalence
+  } else {
+    prev <-svyby(#~I(hivstatus==1),
+      as.formula(paste0("~I(", response_var, "==1)")),
+      by= survey_data[[group]],
+      FUN = svyciprop,
+      design = weighted,
+      family = "quasibinomial",
+      method="logit",
+      vartype = c("ci"),
+      keep.names = FALSE)%>%
+      rename(Variable=by)%>%
+      mutate_if(is.numeric, ~ . * 100)%>%
+      mutate_if(is.numeric, round,1)%>%
+      mutate(Prevalence=paste0(`I(hivstatus == 1)`," ", "(", ci_l, " - ",ci_u,")"))%>%
+      mutate(Weight=survey_weight,
+             Category=group)%>%
+      select(Category,Variable, Prevalence, Weight)
+
+    prev
+  }
+
+}
+
+# result <- grouped_weighted_prev(benchmarke_hsrc, survey_weight = "hivweight", group = "", response_var = "hivstatus")
