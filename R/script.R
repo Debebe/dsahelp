@@ -26,14 +26,35 @@ create_table <- function(data){
   ft <- bold(ft, bold = TRUE, part = "header")
   ft <- font(ft, fontname = "Arial", part = "header")
   ft <- fontsize(ft, i = NULL, j = NULL, size = 9, part = "all")
+  set_table_properties(ft,layout = "autofit")
 
   # Adding footer
-  ft <-add_footer_lines(ft, "NB") %>%
+  # ft <-add_footer_lines(ft, "NB") %>%
+  #   font(part = "footer", fontname = "Arial") %>%
+  #   bold(bold = FALSE, part = "footer")
+  # # adding font size for footer
+  # ft <-fontsize(ft, i = NULL, j = NULL, size = 7, part = "footer")
+}
+
+
+#' Title Add custom footer to a table
+#'
+#' @param ft A flextable object created by create_table function
+#' @param footer_text Footer text to be added
+#'
+#' @return
+#' @export
+#'
+#' @examples
+add_custom_footer <- function(ft, footer_text) {
+  ft <- add_footer_lines(ft, footer_text) %>%
     font(part = "footer", fontname = "Arial") %>%
-    bold(bold = FALSE, part = "footer")
-  # adding font size for footer
-  ft <-fontsize(ft, i = NULL, j = NULL, size = 7, part = "footer")
-  set_table_properties(ft,layout = "autofit")
+    bold(bold = FALSE, part = "footer") %>%
+    fontsize(i = NULL, j = NULL, size = 7, part = "footer")%>%
+    padding(padding = 0, part = "footer")%>%
+    padding(padding.top = 0, part = "footer")
+
+  return(ft)
 }
 
 
@@ -291,3 +312,4 @@ create_weighted_prevalence <- function(survey_data, survey_weight, group, respon
 }
 
 # result <- grouped_weighted_prev(benchmarke_hsrc, survey_weight = "hivweight", group = "", response_var = "hivstatus")
+

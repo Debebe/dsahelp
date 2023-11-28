@@ -5,8 +5,6 @@
 \title{Title Calculate weighted and weighted prevalence}
 \usage{
 create_weighted_prevalence(survey_data, survey_weight, group, response_var)
-
-create_weighted_prevalence(survey_data, survey_weight, group, response_var)
 }
 \arguments{
 \item{survey_data}{Dataframe containing variables,survey weight etc}
@@ -18,7 +16,5 @@ create_weighted_prevalence(survey_data, survey_weight, group, response_var)
 \item{response_var}{Column for a response variable for which prevalence is generated}
 }
 \description{
-Title Calculate weighted and weighted prevalence
-
 Title Calculate weighted and weighted prevalence
 }
